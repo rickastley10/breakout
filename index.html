@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>minesweeper</title>
+<title>breakout</title>
 <style>
     body {
     margin: 0;
@@ -11,7 +11,6 @@
     overflow: hidden;
 
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
 
@@ -25,20 +24,6 @@
     width: min(100vw, 100vh);
     height: min(100vw, 100vh);
 }
-    button{
-    margin-top: 10px;
-    padding: 10px 20px;
-    font-size: 16px;
-    background: #333;
-    color: white;
-    border: 1px solid #555;
-    border-radius: 5px;
-    cursor: pointer;
-    position: static;
-}
-    button:active {
-    background: #555;
-}
 </style>
 </head>
 <body>
@@ -51,8 +36,8 @@
    ============================================================ */
 const WINDOW_WIDTH = 400;
 const WINDOW_HEIGHT = 400;
-const w = 20;
-const h = 20;
+const w = 40;
+const h = 40;
 
 /* ============================================================
    GLOBALS
@@ -105,11 +90,16 @@ function handleInput(e) {
     const canvasY = y * scaleY;
 
 
-    if(menu===0){
-        mx=canvasX
-    }
-    
+    gotoX=canvasX-20
 
+    if(175 <=canvasX&& canvasX <=225 && canvasY <=50){
+        if(menu===1){
+            menu=0
+        }
+        else{
+            menu=1
+        }
+    }
 }
 
 canvas.addEventListener("touchstart", handleInput);
@@ -118,33 +108,51 @@ canvas.addEventListener("mousedown", handleInput);
 /* ============================================================
    GAME STATE
    ============================================================ */
+function reset(){
+    //ball
+    ball_x =200
+    ball_y =200
 
-px=200
-py=360
+    ball_vx =5
+    ball_vy =5
 
-mx=999
+    ball_bottom =ball_y+10
+    ball_right =ball_x+10
 
-bx=200
-by=200
-vx=5
-vy=5
 
-bd=2
-pd=2
+    //paddle
+    paddle_x =180
+    paddle_y =360
 
-bricks=[]
-for(let x=0;x<10;x++){
-    for(let y=0;y<5;y++){
-        bricks.push({
-            "x":0+(x*40),
-            "y":0+(y*30),
-            "a":1,
-            "colour": Math.floor(Math.random()*4)+1  // 1 - red      2 - green       3 - blue       4 - white
-        })
+    paddle_bottom =paddle_y+6
+    paddle_right =paddle_x+40
+
+    level=0
+
+    bricks = []
+    for (y=1;y<(5+level);y++){
+        for (x=1;x<10;x++){
+            bricks.push({
+                "x":x*38,
+                "y":y*20,
+                "on":1,
+                "colour": Math.floor(Math.random()*7)+1
+            })
+        }
     }
+
+    score=0
+    gotoX=999
 }
-lives=3
+
+
+reset()
+
+brick_width = 20
+brick_height = 8
+
 menu=0
+
 /* ============================================================
    MAIN LOOP
    ============================================================ */
@@ -152,205 +160,167 @@ function game_loop() {
     if (!running) return;
         
         ctx.font = "15px Arial";
+        
+
+        if (keys["d"]){
+            if(paddle_x <= 360){
+                paddle_x=paddle_x+20;
+            }
+        }
+        if (keys["a"]){
+            if(paddle_x>=0){
+                paddle_x=paddle_x-20;
+            }
+        }
+        if (keys["ArrowRight"]){
+            if(paddle_x <= 360){
+                paddle_x=paddle_x+20;
+            }
+        }
+        if (keys["ArrowLeft"]){
+            if(paddle_x>=0){
+                paddle_x=paddle_x-20;
+            }
+        }
+
         if(menu===0){
+
             
+
+            if(gotoX!==999){
+                if(Math.abs(paddle_x - gotoX)<20){
+                    gotoX=999
+                }
+
+                if(paddle_x+10<gotoX){
+                    paddle_x+=20
+                }
+                else if(paddle_x>gotoX){
+                    paddle_x-=20
+                }
+            }
+
+
+            ball_x=ball_x+ball_vx
+            ball_y=ball_y+ball_vy
+
+
             
-            if (keys["a"]){
-                if(px!==0){
-                    px=px-20
-                }
-                pd=1
 
-                mx=999
-            }
-            else if (keys["d"]){
-                if(px!==400-w*3){
-                    px=px+20
-                }
-                pd=3
-                mx=999
-            }
-            else{
-                pd=2
+
+            ball_bottom =ball_y+10
+            ball_right =ball_x+10
+            paddle_bottom =paddle_y+6
+            paddle_right =paddle_x+40
+
+
+
+            if(ball_x <= 0){ball_vx=-ball_vx}
+            if(ball_x >= 380){ball_vx=-ball_vx}
+            if(ball_y <= 0){ball_vy=-ball_vy}
+
+            if(ball_y > 400){
+                reset()
             }
 
-
-            if (keys["ArrowLeft"]){
-                if(px!==0){
-                    px=px-20
-                }
-                pd=1
-
-                mx=999
-            }
-            else if (keys["ArrowRight"]){
-                if(px!==400-w*3){
-                    px=px+20
-                }
-                pd=3
-                mx=999
-            }
-            else{
-                pd=2
-            }
-            bx=bx+vx
-            by=by+vy
-
-
-            if(px+30<mx && mx!==999){
-                px=px+w
-                if(px!==400-w*3){
-                    px=px+20
-                }
-                pd=3
-            }
-            else if(px>mx && mx!==999){
-                if(px!==0){
-                    px=px-20
-                }
-                pd=1
-            }
-            else{
-                pd=2
+            
+            if(ball_bottom >= paddle_y && paddle_bottom >= ball_y && paddle_x <= ball_right && ball_x <= paddle_right){
+                ball_vy=-ball_vy
             }
 
+            for (i of bricks){
+                if(i["on"] === 1 &&
+                ball_right  >= i["x"] &&
+                ball_x      <= i["x"] + brick_width &&
+                ball_bottom >= i["y"] &&
+                ball_y      <= i["y"] + brick_height){
 
+                    i["on"] = 0;
+                    score++
 
-            if(px<= bx && bx <= px+w*3 && py <= by+h && by+h <= py+h/2){
-
-                vy=-vy
-
-                if(bd === pd){
-                    if(vx < 0){
-                        vx=vx-2
-                    }
-                    if(vx > 0){
-                        vx=vx+2
-                    }
-                }
-                else if((bd===1&&pd===3)||(bd===3 && pd===1)){
-                    if(vx < 0){
-                        vx=vx+2
-                    }
-                    if(vx > 0){
-                        vx=vx-2
-                    }
-                }
-            }
-
-            for(let i of bricks){
-                if(i["x"]<= bx && bx <= i["x"]+30 && i["y"] <= by && by <= i["y"]+10 && i["a"]===1){
-                    vy=-vy
-                    i["a"]=0
-                }
-            }
-            if(400 <= bx+w){
-                vx=-vx
-                bd=1
-            }
-            if(bx <= 0){
-                vx=-vx
-                bd=3
-            }
-            if(by <= 0){
-                vy=-vy
-            }
-
-            if(400 <= by){
-                //game over -------------------------
-                lives=lives-1
-                
-                by=200
-                vx=5
-
-                if(lives===0){
-                    px=200
-                    py=360
-
-                    mx=999
-
-                    bx=200
-                    by=200
-                    vx=5
-                    vy=5
-
-                    bd=2
-                    pd=2
-
-                    bricks=[]
-                    for(let x=0;x<10;x++){
-                        for(let y=0;y<5;y++){
-                            bricks.push({
-                                "x":0+(x*40),
-                                "y":0+(y*30),
-                                "a":1,
-                                "colour": Math.floor(Math.random()*4)+1  // 1 - red      2 - green       3 - blue       4 - white
-                            })
-                        }
-                    }
-                    lives=3
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle="#FFFFFF"
-                    ctx.fillText("you lost", 200, 200)
-                    menu=1
                     
+                    overlapX = Math.min(ball_right - i["x"], (i["x"] + brick_width) - ball_x);
+                    overlapY = Math.min(ball_bottom - i["y"], (i["y"] + brick_height) - ball_y);
+
+                    if(overlapX < overlapY){
+                        ball_vx = -ball_vx;
+                    } else {
+                        ball_vy = -ball_vy;
+                    }
                 }
             }
-            /* ===== RENDER ===== */
-            //clear screen
-            ctx.fillStyle="#000000"
-            ctx.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
-
-            ctx.fillStyle="#FF0000"
-            ctx.fillRect(px, py, w*3, h/2)
-
-            ctx.fillStyle="#FF0000"
-            ctx.fillRect(bx, by, w, h)
-            z=0
             x=0
-            for(let i of bricks){
-                
-                if(i["a"]===1){
-                    if(i["colour"]===1){
-                        ctx.fillStyle="#FF0000"
-                    }
-                    if(i["colour"]===2){
-                        ctx.fillStyle="#00FF00"
-                    }
-                    if(i["colour"]===3){
-                        ctx.fillStyle="#0000FF"
-                    }
-                    if(i["colour"]===4){
-                        ctx.fillStyle="#FFFFFF"
-                    }
-                    
-                    ctx.fillRect(i["x"], i["y"], 30, 10)
-                    z=z+1
-
+            y=0
+            for (i of bricks){
+                x++
+                if(i["on"]===0){
+                    y++
                 }
-                x=x+1
             }
-            if(z===0){
-                for(let x=0;x<10;x++){
-                    for(let y=0;y<6;y++){
+            if(x===y){
+                level++
+
+                bricks = []
+                for (y=1;y<(5+level);y++){
+                    for (x=1;x<10;x++){
                         bricks.push({
-                            "x":0+(x*40),
-                            "y":0+(y*30),
-                            "a":1,
-                            "colour": Math.floor(Math.random()*4)+1  // 1 - red      2 - green       3 - blue       4 - white
+                            "x":x*38,
+                            "y":y*20,
+                            "on":1,
+                            "colour": Math.floor(Math.random()*7)+1
                         })
                     }
                 }
             }
         }
-        ctx.fillStyle="#FF0000"
-        ctx.fillText(lives, 10-2, 20-2)
-        ctx.fillStyle="#0000FF"
-        ctx.fillText(lives, 10+2, 20+2)
-        ctx.fillStyle="#FFFFFF"
-        ctx.fillText(lives, 10, 20)
 
+        /* ===== RENDER ===== */
+        //clear screen
+        ctx.fillStyle="#000000"
+        ctx.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+
+        ctx.fillStyle="#FF0000"
+        ctx.fillRect(ball_x, ball_y, 10, 10)
+        ctx.fillRect(paddle_x, paddle_y, 40, 6)
+
+        for(i of bricks){
+            if(i["on"]===0){
+                continue
+            }
+            if(i["colour"]===1){
+                ctx.fillStyle="#FF0000"
+            }
+            else if(i["colour"]===2){
+                ctx.fillStyle="#00FF00"
+            }
+            else if(i["colour"]===3){
+                ctx.fillStyle="#0000FF"
+            }
+            else if(i["colour"]===4){
+                ctx.fillStyle="#FFFF00"
+            }
+            else if(i["colour"]===5){
+                ctx.fillStyle="#00FFFF"
+            }
+            else if(i["colour"]===6){
+                ctx.fillStyle="#FFFFFF"
+            }
+            else if(i["colour"]===7){
+                ctx.fillStyle="#F0000F"
+            }
+            ctx.fillRect(i["x"], i["y"], brick_width, brick_height)
+        }
+
+        ctx.font = "15px Arial";
+
+        ctx.fillText(score, 10, 20)
+
+        ctx.fillStyle="#ffffff"
+        ctx.fillText("||",200, 20)
+
+
+       // paddle_x=ball_x
     setTimeout(() => {
         requestAnimationFrame(game_loop);
     }, 50);
@@ -358,6 +328,5 @@ function game_loop() {
 
 game_loop();
 </script>
-<button onclick="if(menu===1){menu=0;}else{menu=1;}">pause / unpause</button>
 </body>
 </html>
